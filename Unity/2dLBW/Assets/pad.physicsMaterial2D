@@ -6,9 +6,9 @@ PhysicsMaterial2D:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: GroundPhysics
+  m_Name: pad
   serializedVersion: 2
-  friction: 0.05
-  bounciness: 0.65
+  friction: 0.5
+  bounciness: 0.05
   m_FrictionCombine: 1
   m_BounceCombine: 3
