@@ -1,10 +1,10 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class Pad : MonoBehaviour
 {
     [SerializeField] private SpriteRenderer padRenderer;
     [SerializeField] private Collider2D padCollider;
-    [SerializeField] private Collider2D stumpCollider;
     [SerializeField] private Color normalColor = Color.white;
     [SerializeField] private Color ghostColor = new Color(1f, 1f, 1f, 0.3f);
 
@@ -16,6 +16,7 @@ public class Pad : MonoBehaviour
     private Vector3 startPosition;
     private bool isGhostMode = false;
     private bool wasHit = false;
+    private HashSet<GameObject> ballsHit = new HashSet<GameObject>();
 
     private void Awake()
     {
@@ -28,8 +29,6 @@ public class Pad : MonoBehaviour
             padRenderer = GetComponent<SpriteRenderer>();
         if (padCollider == null)
             padCollider = GetComponent<PolygonCollider2D>();
-        if (stumpCollider == null)
-            stumpCollider = GetComponent<Collider2D>();
         UpdateGhostMode();
     }
 
@@ -83,20 +82,28 @@ public class Pad : MonoBehaviour
     {
         if (!isGhostMode && collision.gameObject.CompareTag("Ball"))
         {
+            ballsHit.Add(collision.gameObject);
             wasHit = true;
             Debug.Log("PAD HIT! (LBW Check)");
-            //stumpCollider.enabled = false;
         }
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
+        Debug.Log($"TRIGGER ENTER: {collision.gameObject.name}, " +
+                  $"Tag: {collision.tag}, GhostMode: {isGhostMode}");
+
         if (isGhostMode && collision.gameObject.CompareTag("Ball"))
         {
-
+            ballsHit.Add(collision.gameObject);
             Debug.Log("Ball passed through ghost pad");
             wasHit = true;
         }
+    }
+
+    public bool DidBallHit(GameObject ball)
+    {
+        return ballsHit.Contains(ball);
     }
 
     public void ResetPad()

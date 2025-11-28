@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class Stumps : MonoBehaviour
@@ -5,7 +6,7 @@ public class Stumps : MonoBehaviour
     [SerializeField] private SpriteRenderer indicatorBox;
     [SerializeField] private Color hitColor = Color.red;
     [SerializeField] private Color missColor = Color.green;
-
+    private HashSet<GameObject> ballsHit = new HashSet<GameObject>();
     private bool wasHit = false;
 
     private void Start()
@@ -20,6 +21,7 @@ public class Stumps : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("Ball"))
         {
+            ballsHit.Add(collision.gameObject);
             wasHit = true;
             if (indicatorBox != null)
             {
@@ -28,15 +30,20 @@ public class Stumps : MonoBehaviour
             Debug.Log("STUMPS HIT!");
         }
     }
+    public bool DidBallHit(GameObject ball)
+    {
+        return ballsHit.Contains(ball);
+    }
 
     public void ResetStumps()
     {
-        wasHit = false;
+        ballsHit.Clear();
         if (indicatorBox != null)
         {
             indicatorBox.color = missColor;
         }
     }
+
 
     public bool WasHit()
     {
