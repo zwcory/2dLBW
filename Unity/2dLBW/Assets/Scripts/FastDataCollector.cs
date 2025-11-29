@@ -107,7 +107,7 @@ public class FastDataCollector : MonoBehaviour
         Debug.Log($"Recording until pad contact, sample rate: {sampleRate}s");
     }
 
-    public void StopFastCollection()
+    public void StopFastCollection(string trainingOrTest)
     {
         isCollecting = false;
         StopAllCoroutines();
@@ -121,11 +121,12 @@ public class FastDataCollector : MonoBehaviour
         }
         activeBalls.Clear();
 
-        dataCollector.SaveAsCSV();
-        dataCollector.SaveDataset();
+        dataCollector.SaveAsCSV(trainingOrTest);
+        dataCollector.SaveDataset(trainingOrTest);
 
         Debug.Log($"COLLECTION COMPLETE: {totalSamples} samples from {ballsSpawned} balls");
     }
+
 
     IEnumerator SpawnBallsRoutine()
     {
@@ -148,7 +149,7 @@ public class FastDataCollector : MonoBehaviour
         }
 
         yield return new WaitForSeconds(3f);
-        StopFastCollection();
+        StopFastCollection("Training");
     }
 
     void SpawnBall()

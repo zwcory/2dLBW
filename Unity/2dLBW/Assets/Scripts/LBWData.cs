@@ -40,7 +40,7 @@ public class LBWData : MonoBehaviour
         trainingData.Add(example);
     }
 
-    public void SaveDataset()
+    public void SaveDataset(string traingOrTest)
     {
         if (trainingData.Count == 0)
         {
@@ -54,39 +54,48 @@ public class LBWData : MonoBehaviour
         };
 
         string json = JsonUtility.ToJson(dataset, true);
-        string path = Application.dataPath + "/LBWTrainingData.json";
+        string path = Application.dataPath + "/LBWTrainingData.json";;
+        if (traingOrTest == "Test")
+        {
+            path = Application.dataPath + "/LBWTestData.json";
+
+        }
         File.WriteAllText(path, json);
 
         Debug.Log($"Saved {trainingData.Count} training examples to {path}");
     }
 
-    public void SaveAsCSV()
+    public void SaveAsCSV(string traingOrTest)
     {
         if (trainingData.Count == 0)
         {
             Debug.LogWarning("No training data to save!");
             return;
         }
-
         string path = Application.dataPath + "/LBWTrainingData.csv";
+        if (traingOrTest == "Test")
+        {
+             path = Application.dataPath + "/LBWTestData.csv";
+
+        }
 
         using (StreamWriter writer = new StreamWriter(path))
-        {
-            writer.WriteLine("spinType,speed,spinAmount,timeSinceRelease,ballPosX,ballPosY," +
-                           "ballVelX,ballVelY,ballAngularVel,distanceToStumps," +
-                           "distanceToPad,hitPad, reachedPad, willHitStumps");
-
-            foreach (var example in trainingData)
             {
-                writer.WriteLine($"{example.spinType},{example.speed:F6}," +
-                               $"{example.spinAmount:F6},{example.timeSinceRelease:F6}," +
-                               $"{example.ballPosX:F6},{example.ballPosY:F6}," +
-                               $"{example.ballVelX:F6},{example.ballVelY:F6}," +
-                               $"{example.ballAngularVel:F6},{example.distanceToStumps:F6}," +
-                               $"{example.distanceToPad:F6},{example.hitPad},{ example.reachedPadPosition}," +
-                               $"{example.willHitStumps}");
+                writer.WriteLine("spinType,speed,spinAmount,timeSinceRelease,ballPosX,ballPosY," +
+                               "ballVelX,ballVelY,ballAngularVel,distanceToStumps," +
+                               "distanceToPad,hitPad, reachedPad, willHitStumps");
+
+                foreach (var example in trainingData)
+                {
+                    writer.WriteLine($"{example.spinType},{example.speed:F6}," +
+                                   $"{example.spinAmount:F6},{example.timeSinceRelease:F6}," +
+                                   $"{example.ballPosX:F6},{example.ballPosY:F6}," +
+                                   $"{example.ballVelX:F6},{example.ballVelY:F6}," +
+                                   $"{example.ballAngularVel:F6},{example.distanceToStumps:F6}," +
+                                   $"{example.distanceToPad:F6},{example.hitPad},{example.reachedPadPosition}," +
+                                   $"{example.willHitStumps}");
+                }
             }
-        }
 
         Debug.Log($"Saved CSV with {trainingData.Count} samples to {path}");
         PrintDatasetStatistics();

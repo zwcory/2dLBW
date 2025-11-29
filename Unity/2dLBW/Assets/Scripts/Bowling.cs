@@ -1,8 +1,7 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using System.Collections;
-
 
 public class Bowling : MonoBehaviour
 {
@@ -29,13 +28,6 @@ public class Bowling : MonoBehaviour
     [SerializeField] private float backSpinLiftForce = 0.1f; // Keeps ball up
 
 
-    [Header("Auto Bowl Settings")]
-    [SerializeField] private float autoBowlInterval = 2f;  // Seconds between bowls
-    [SerializeField] private float autoBowlAngleMin = -35f;
-    [SerializeField] private float autoBowlAngleMax = -5f;
-    [SerializeField] private float autoBowlPowerMin = 1.0f;
-    [SerializeField] private float autoBowlPowerMax = 1.0f;
-
     [Header("References")]
     [SerializeField] private Stumps stumps;
 
@@ -45,7 +37,7 @@ public class Bowling : MonoBehaviour
     private bool hasLaunched = false;
     private bool isGrounded = false;
     private SpinType currentSpin = SpinType.BackSpin;
-    private bool isAutoBowling = false;
+
 
     private float currentSpeed;
     private float currentSpinAmount;
@@ -197,53 +189,16 @@ public class Bowling : MonoBehaviour
         // Hide arrow
         lineRenderer.enabled = false;
 
+
         Debug.Log($"Bowled with {currentSpin} spin!");
         padScript.RandomizePosition();
 
         Debug.Log($": Angle={direction.normalized}°, " +
                   $"Spin={currentSpin}, Speed={currentSpeed:F2}x");
-        // Start data collection if collector exists
-        //if (dataCollector != null)
-        //{
-        //    dataCollector.StartRecording();
-        //}
 
-        //Debug.Log($"Bowled: {currentSpin}, Speed: {currentSpeed:F2}x, Spin: {currentSpinAmount:F2}");
     }
 
-    void BowlBallAutomatic()
-    {
-        // Get screen bounds in world space
-        Vector2 bottomLeft = Camera.main.ScreenToWorldPoint(Vector2.zero);
-        Vector2 topRight = Camera.main.ScreenToWorldPoint(
-            new Vector2(Screen.width, Screen.height)
-        );
 
-        // Bottom right quarter bounds
-        float minX = Mathf.Lerp(bottomLeft.x, topRight.x, 0.5f);  // Right half
-        float maxX = topRight.x;
-        float minY = bottomLeft.y;  // Bottom half
-        float maxY = Mathf.Lerp(bottomLeft.y, topRight.y, 0.5f);
-
-        // Generate random position in bottom right quarter
-        Vector2 randomMousePosition = new Vector2(
-            Random.Range(minX, maxX),
-            Random.Range(minY, maxY)
-        );
-
-        BowlBall(randomMousePosition);
-
-        Debug.Log($"Auto-bowled to position: {randomMousePosition}, " +
-                  $"Spin={currentSpin}, Speed={currentSpeed:F2}x");
-
-        //if (dataCollector != null)
-        //{
-        //    dataCollector.StartRecording();
-        //}
-
-        //Debug.Log($"Auto-bowled: Angle={angle:F1}°, Power={power:F2}, " +
-        //          $"Spin={currentSpin}, Speed={currentSpeed:F2}x");
-    }
 
 
     void ApplyInitialSpin()
@@ -304,53 +259,6 @@ public class Bowling : MonoBehaviour
     }
 
 
-    // Auto Bowl Functions
-    public void StartAutoBowl()
-    {
-        if (isAutoBowling) return;
-
-        isAutoBowling = true;
-        StartCoroutine(AutoBowlRoutine());
-        Debug.Log("Auto-bowl started");
-    }
-
-    public void StopAutoBowl()
-    {
-        isAutoBowling = false;
-        StopAllCoroutines();
-        Debug.Log("Auto-bowl stopped");
-    }
-
-    IEnumerator AutoBowlRoutine()
-    {
-        while (isAutoBowling)
-        {
-            // Wait for ball to stop from previous bowl
-            if (hasLaunched)
-            {
-                yield return new WaitForSeconds(autoBowlInterval);
-
-                // Stop data collection
-                //if (dataCollector != null)
-                //{
-                //    dataCollector.StopRecording();
-                //}
-
-                // Reset for next bowl
-                ResetBall();
-                yield return new WaitForSeconds(0.5f);
-            }
-
-            // Random spin type
-            int spinChoice = Random.Range(0, 2);
-            currentSpin = (SpinType)spinChoice;
-
-            // Bowl
-            BowlBallAutomatic();
-
-            yield return null;
-        }
-    }
 
     // Public methods for UI buttons
     public void SetTopSpin()
@@ -407,11 +315,6 @@ public class Bowling : MonoBehaviour
             releaseVelocity = rb.linearVelocity,
             timestamp = Time.time
         };
-    }
-
-    public bool IsAutoBowling()
-    {
-        return isAutoBowling;
     }
 
 }
