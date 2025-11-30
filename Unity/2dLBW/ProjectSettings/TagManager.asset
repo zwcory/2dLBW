@@ -7,6 +7,10 @@ TagManager:
   - Ball
   - Ground
   - Pad
+  - Predictor
+  - Indicator
+  - Indicator2
+  - IndicatorOld
   layers:
   - Default
   - TransparentFX

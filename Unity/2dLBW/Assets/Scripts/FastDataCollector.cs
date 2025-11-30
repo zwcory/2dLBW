@@ -13,12 +13,12 @@ public class FastDataCollector : MonoBehaviour
 
     [Header("Collection Settings")]
     [SerializeField] private int ballsPerSet = 5;
-    [SerializeField] private float spawnInterval = 0.3f;
-    [SerializeField] private int targetSamples = 10000;
-    [SerializeField] private float sampleRate = 0.05f; // Sample every 0.05 seconds
+    [SerializeField] private float spawnInterval = 0.2f;
+    [SerializeField] private int targetSamples = 25000;
+    [SerializeField] private float sampleRate = 0.02f;
 
     [Header("Auto Bowl Parameters")]
-    [SerializeField] private float autoBowlAngleMin = -35f;
+    [SerializeField] private float autoBowlAngleMin = -22.5f;
     [SerializeField] private float autoBowlAngleMax = -5f;
     [SerializeField] private float forceMultiplier = 10f;
     [SerializeField] private float fixedDistance = 2f;
@@ -30,6 +30,10 @@ public class FastDataCollector : MonoBehaviour
     [SerializeField] private float topSpinTorque = 10f;
     [SerializeField] private float backSpinTorque = -10f;
 
+    [Header("LBW Predictor")]
+    [SerializeField] private BallTracker ballTracker;
+
+
     private Vector2 releasePoint;
     private List<BallInstance> activeBalls = new List<BallInstance>();
     private bool isCollecting = false;
@@ -37,6 +41,8 @@ public class FastDataCollector : MonoBehaviour
     private int ballsSpawned = 0;
     private int ballsInCurrentSet = 0;
     private Vector2 currentPadPosition;
+    private string trainingOrTestData;
+
 
     private class BallInstance
     {
@@ -88,16 +94,25 @@ public class FastDataCollector : MonoBehaviour
         }
     }
 
-    public void StartFastCollection()
+    public void StartFastCollection(string trainingOrTest)
     {
         if (isCollecting) return;
+        trainingOrTestData = trainingOrTest;
+        // lower total samples for test data
+        if (trainingOrTestData == "Test")
+        {
+            targetSamples = 15000;
+        }
 
+        ballTracker.enabled = false;
         isCollecting = true;
         totalSamples = 0;
         ballsSpawned = 0;
         ballsInCurrentSet = 0;
         dataCollector.ClearData();
         pad.SetGhostMode(true);
+
+
 
         pad.RandomizePosition();
         currentPadPosition = pad.transform.position;
@@ -111,6 +126,7 @@ public class FastDataCollector : MonoBehaviour
     {
         isCollecting = false;
         StopAllCoroutines();
+        ballTracker.enabled = true;
 
         foreach (var ball in activeBalls)
         {
@@ -134,13 +150,37 @@ public class FastDataCollector : MonoBehaviour
         {
             if (ballsInCurrentSet >= ballsPerSet)
             {
-                pad.RandomizePosition();
-                currentPadPosition = pad.transform.position;
+                
                 ballsInCurrentSet = 0;
 
                 Debug.Log($"=== NEW SET === Pad position: X={currentPadPosition.x:F2}");
             }
 
+            // get more targeted data for tricky decisions
+            if (totalSamples >= targetSamples *0.5)
+            {
+                Debug.Log("------------ 60% ------------");
+                autoBowlAngleMax = -15;
+                autoBowlAngleMin = -22.5f;
+            }
+            if (totalSamples >= targetSamples * 0.75)
+            {
+                Debug.Log("------------ 75% ------------");
+                autoBowlAngleMax = -17;
+                autoBowlAngleMin = -21.5f;
+            }
+            if (totalSamples >= targetSamples * 0.9)
+            {
+                Debug.Log("------------ 90% ------------");
+                autoBowlAngleMax = -18.5f;
+                autoBowlAngleMin = -20.5f;
+            }
+            if (ballsInCurrentSet % 5 == 0)
+            {
+                yield return new WaitForSeconds(1f);
+                pad.RandomizePosition();
+                currentPadPosition = pad.transform.position;
+            }
             SpawnBall();
             ballsSpawned++;
             ballsInCurrentSet++;
@@ -149,7 +189,7 @@ public class FastDataCollector : MonoBehaviour
         }
 
         yield return new WaitForSeconds(3f);
-        StopFastCollection("Training");
+        StopFastCollection(trainingOrTestData);
     }
 
     void SpawnBall()
@@ -269,11 +309,6 @@ public class FastDataCollector : MonoBehaviour
         bool hitPadSoFar = pad.DidBallHit(ball.ballObject);
         bool reachedPadX = ball.ballObject.transform.position.x >= pad.transform.position.x;
 
-        if (ball.samples.Count % 10 == 0)
-        {
-            Debug.Log($"Ball {ball.ballObject.name}: X={ball.ballObject.transform.position.x:F2}, " +
-                      $"PadX={pad.transform.position.x:F2}, HitPad={hitPadSoFar}");
-        }
 
 
         SampleData sample = new SampleData
@@ -308,9 +343,6 @@ public class FastDataCollector : MonoBehaviour
         bool hitPad = pad.DidBallHit(ball.ballObject);
 
         int stumpLabel = hitStumps ? 1 : 0;
-
-        Debug.Log($"Ball finalized: {ball.samples.Count} samples, " +
-                 $"HitPad={hitPad}, WillHitStumps={hitStumps}");
 
         // Add all recorded samples with final label
         foreach (var sample in ball.samples)

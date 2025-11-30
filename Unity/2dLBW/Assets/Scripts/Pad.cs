@@ -9,14 +9,19 @@ public class Pad : MonoBehaviour
     [SerializeField] private Color ghostColor = new Color(1f, 1f, 1f, 0.3f);
 
     [Header("Movement Settings")]
-    [SerializeField] private float minPosition = 2f;  // Minimum X position
-    [SerializeField] private float maxPosition = 8f;  // Maximum X position
-    [SerializeField] private float moveVariation = 0.5f; // How much it moves
+    [SerializeField] private float minPosition = 2f;  
+    [SerializeField] private float maxPosition = 8f;  
+    [SerializeField] private float moveVariation = 0.5f; 
 
     private Vector3 startPosition;
     private bool isGhostMode = false;
     private bool wasHit = false;
     private HashSet<GameObject> ballsHit = new HashSet<GameObject>();
+
+
+    [Header("References")]
+    [SerializeField] private BallTracker ballTracker;
+
 
     private void Awake()
     {

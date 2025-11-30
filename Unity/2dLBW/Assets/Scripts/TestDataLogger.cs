@@ -108,12 +108,4 @@ public class TestDataLogger : MonoBehaviour
         Debug.Log($"Saved {capturedSamples.Count} samples to {path}");
         capturedSamples.Clear();
     }
-
-    void OnGUI()
-    {
-        GUILayout.BeginArea(new Rect(Screen.width - 250, 10, 240, 100));
-        GUILayout.Label("Test Data Logger");
-        GUILayout.Label($"Captured: {capturedSamples.Count} samples");
-        GUILayout.EndArea();
-    }
 }

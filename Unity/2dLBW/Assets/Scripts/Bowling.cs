@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
-using System.Collections;
+
 
 public class Bowling : MonoBehaviour
 {
@@ -24,12 +24,16 @@ public class Bowling : MonoBehaviour
     [Header("Spin Settings")]
     [SerializeField] private float topSpinTorque = 10f;
     [SerializeField] private float backSpinTorque = -10f;
-    [SerializeField] private float topSpinDownForce = 0.1f; // Dips ball down
-    [SerializeField] private float backSpinLiftForce = 0.1f; // Keeps ball up
+    [SerializeField] private float topSpinDownForce = 0.1f; 
+    [SerializeField] private float backSpinLiftForce = 0.1f; 
 
 
     [Header("References")]
     [SerializeField] private Stumps stumps;
+    [SerializeField] private SpriteRenderer decisionIndicator;
+    [SerializeField] private Color waitColor = Color.yellow;
+
+
 
     private Rigidbody2D rb;
     private LineRenderer lineRenderer;
@@ -106,7 +110,7 @@ public class Bowling : MonoBehaviour
         float distance = Mathf.Min(direction.magnitude, maxDistance);
         Vector2 bowlDirection = direction.normalized * distance;
 
-        // Draw arrow
+        // Draw arrow (line)
         lineRenderer.positionCount = 2;
         lineRenderer.SetPosition(0, Vector3.zero);
         lineRenderer.SetPosition(1, bowlDirection);
@@ -120,7 +124,7 @@ public class Bowling : MonoBehaviour
 
         if (hasLaunched)
         {
-            // Restrict mouse to range around start position after launch
+
             Vector2 offset = mousePos - startPosition;
             if (offset.magnitude > aimRangeRadius)
             {
@@ -134,13 +138,12 @@ public class Bowling : MonoBehaviour
 
     Vector2 ApplyAimConstraints(Vector2 direction)
     {
-        // Get angle from horizontal (0° = right, 90° = up)
+
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
 
         // Clamp angle
         angle = Mathf.Clamp(angle, minAimAngle, maxAimAngle);
 
-        // Convert back to direction
         float magnitude = direction.magnitude;
         magnitude = Mathf.Max(magnitude, minAimDistance);
 
@@ -158,10 +161,7 @@ public class Bowling : MonoBehaviour
 
         // Apply aim constraints
         direction = ApplyAimConstraints(direction);
-        Debug.Log($"Direction {direction}");
 
-
-        //float distance = Mathf.Min(direction.magnitude, maxDistance);
         // changed from direction magnitude to make it consistant
         float distance = 2f;
 
@@ -174,27 +174,37 @@ public class Bowling : MonoBehaviour
         currentSpeed = speedMult * speedVar;
 
         Vector2 force = direction.normalized * distance * forceMultiplier;
-
-        Debug.Log($"force is {force}");
-        // Enable physics
         rb.bodyType = RigidbodyType2D.Dynamic;
         hasLaunched = true;
-
-        // Apply force
         rb.AddForce(force, ForceMode2D.Impulse);
-
-        // Apply spin
         ApplyInitialSpin();
-
-        // Hide arrow
         lineRenderer.enabled = false;
 
 
-        Debug.Log($"Bowled with {currentSpin} spin!");
+        BallTracker existingTracker = gameObject.GetComponent<BallTracker>();
+        if (existingTracker != null)
+        {
+            Debug.LogWarning("Found existing BallTracker, destroying it");
+            Destroy(existingTracker);
+        }
+
+
+        float currentSpinAmount = Mathf.Abs(
+        currentSpin == SpinType.TopSpin ? topSpinTorque : backSpinTorque
+           );
+
+
+
+
         padScript.RandomizePosition();
 
-        Debug.Log($": Angle={direction.normalized}°, " +
-                  $"Spin={currentSpin}, Speed={currentSpeed:F2}x");
+
+
+        BallTracker tracker = gameObject.AddComponent<BallTracker>();
+        tracker.Initialize(currentSpin, currentSpeed, currentSpinAmount);
+
+        float radians = Mathf.Atan2(direction.y, direction.x);
+        float angle = radians * Mathf.Rad2Deg;
 
     }
 
@@ -224,7 +234,7 @@ public class Bowling : MonoBehaviour
             if (collision.gameObject.CompareTag("Ground"))
             {
                 isGrounded = true;
-                Debug.Log("Ball hit ground - stopping spin effects");
+                
             }
         }
         
@@ -264,20 +274,18 @@ public class Bowling : MonoBehaviour
     public void SetTopSpin()
     {
         currentSpin = SpinType.TopSpin;
-        Debug.Log("Spin: Top Spin (dips down)");
     }
 
     public void SetBackSpin()
     {
         currentSpin = SpinType.BackSpin;
-        Debug.Log("Spin: Back Spin (seam)");
     }
 
     public void ResetBall()
     {
         // Reset for next bowl
         transform.position = startPosition;
-        transform.rotation = Quaternion.identity; // Reset orientation to original
+        transform.rotation = Quaternion.identity;
         rb.rotation = 0f;
         rb.linearVelocity = Vector2.zero;
         rb.angularVelocity = 0f;
@@ -293,9 +301,11 @@ public class Bowling : MonoBehaviour
         if (padScript != null)
         {
             padScript.ResetPad();
+        };
+        if(decisionIndicator != null)
+        {
+            decisionIndicator.color = waitColor;
         }
-        ;
-
     }
 
     void BowlBallManual()
