@@ -8,6 +8,6 @@ I have left some of the older models and their scalers in the project, so you ca
 
 FastRecord records data for training, although it could also be used for testing. The buttons (Fast record and test record) just export the results under a different name, and with a different number of entries. 
 
-In the end I found a balance between random , more focused, and very focused deliveries delivered the best result in game. I would make changes to the model, and how its called if I were to recreate the project, see [my thoughts](Thoughts) for the details.
+In the end I found a balance between random , more focused, and very focused deliveries delivered the best result in game. I would make changes to the model, and how its called if I were to recreate the project, see [my thoughts](Thoughts.md) for the details.
 
 This is not meant to be a fully polished project, but rather a chance to develop and learn the ideas around AI, neural networks, and pytorch, all within a short project phase. 
