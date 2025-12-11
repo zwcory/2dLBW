@@ -1,6 +1,6 @@
 This project was developed in Unity, with pytorch used to develop the neural network. The model was then exported to ONNX, for unity compatibility.
 
-Read [my thoughts](Thoughts) of the development of the project.
+Read [my thoughts](Thoughts.md) of the development of the project.
 
 The builds will be released to the releases page, as I have done with previous unity projects before. 
 
