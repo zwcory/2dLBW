@@ -93,7 +93,7 @@ public class Pad : MonoBehaviour
         }
     }
 
-    private void OnTriggerEnter2D(Collider2D collision)
+    public void OnTriggerEnter2D(Collider2D collision)
     {
         Debug.Log($"TRIGGER ENTER: {collision.gameObject.name}, " +
                   $"Tag: {collision.tag}, GhostMode: {isGhostMode}");
