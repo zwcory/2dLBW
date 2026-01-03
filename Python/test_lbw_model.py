@@ -9,7 +9,7 @@ import seaborn as sns
 
 def load_model_and_scaler():
     """Load the trained model and scaler"""
-    model = LBWPredictor(input_size=13)
+    model = LBWPredictor(input_size=7)
     model.load_state_dict(torch.load('lbw_model_best.pth'))
     model.eval()
 
@@ -51,7 +51,7 @@ def analyze_by_spin_type(df, predictions_binary, predictions_proba, y_true):
     spin_types = {0: 'TopSpin', 1: 'BackSpin'}
 
     for spin_val, spin_name in spin_types.items():
-        mask = df['spinType'] == spin_val
+        mask = df['spinDirection'] == spin_val
 
         if mask.sum() == 0:
             print(f"\nNo samples for {spin_name}")
@@ -122,10 +122,8 @@ def test_from_csv(test_csv_path, threshold=0.55):
     print(f"  Missed stumps: {len(df) - df['willHitStumps'].sum()} ({100*(1-df['willHitStumps'].mean()):.1f}%)")
 
     # Extract features
-    X_test = df[['spinType', 'speed', 'spinAmount', 'timeSinceRelease',
-                 'ballPosX', 'ballPosY', 'ballVelX', 'ballVelY',
-                 'ballAngularVel', 'distanceToStumps', 'distanceToPad',
-                 'hitPad', 'reachedPad']].values
+    X_test = df[['impactPosX', 'impactPosY', 'impactVelX', 'impactVelY',
+                 'impactAngularVel', 'spinDirection', 'distanceToStumps']].values
 
     y_true = df['willHitStumps'].values
 
@@ -186,7 +184,7 @@ def test_from_csv(test_csv_path, threshold=0.55):
     spin_names = {0: 'TopSpin', 1: 'BackSpin'}
 
     for spin_val, spin_name in spin_names.items():
-        mask = df['spinType'] == spin_val
+        mask = df['spinDirection'] == spin_val
         indices = np.where(mask)[0][:5]  # First 5 of this spin type
 
         if len(indices) == 0:
@@ -196,10 +194,10 @@ def test_from_csv(test_csv_path, threshold=0.55):
 
         for idx in indices:
             print(f"\n  Sample {idx+1}:")
-            print(f"    Speed: {X_test[idx][1]:.2f}x")
-            print(f"    Ball Position: ({X_test[idx][4]:.2f}, "
-                  f"{X_test[idx][5]:.2f})")
-            print(f"    Hit Pad: {'Yes' if X_test[idx][11] == 1 else 'No'}")
+            print(f"    Impact Position X: {X_test[idx][0]:.2f}x")
+            print(f"    Impact Position Y: ({X_test[idx][1]:.2f}y")
+            print(f"    Impact Vel X: {X_test[idx][2]:.2f}x")
+            print(f"    Impact Vel Y: ({X_test[idx][3]:.2f}y")
             print(f"    Predicted Probability: {predictions_proba[idx]:.2%}")
             print(f"    Prediction: {'HIT' if predictions_binary[idx] == 1 else 'MISS'}")
             print(f"    Actual: {'HIT' if y_true[idx] == 1 else 'MISS'}")
@@ -212,8 +210,7 @@ def test_from_csv(test_csv_path, threshold=0.55):
     return accuracy, predictions_proba, predictions_binary
 
 def plot_test_results(
-        df, y_true, predictions_proba, predictions_binary, threshold
-):
+        df, y_true, predictions_proba, predictions_binary, threshold):
     """Create visualizations of test results including spin type breakdown"""
 
     fig = plt.figure(figsize=(16, 12))
@@ -235,7 +232,7 @@ def plot_test_results(
     for i, (spin_val, spin_name) in enumerate(spin_names.items()):
         ax = fig.add_subplot(gs[0, i+1])
 
-        mask = df['spinType'] == spin_val
+        mask = df['spinDirection'] == spin_val
         if mask.sum() == 0:
             ax.text(0.5, 0.5, f'No {spin_name}\ndata',
                     ha='center', va='center')
@@ -278,7 +275,7 @@ def plot_test_results(
     for i, (spin_val, spin_name) in enumerate(spin_names.items()):
         ax = fig.add_subplot(gs[1, i+1])
 
-        mask = df['spinType'] == spin_val
+        mask = df['spinDirection'] == spin_val
         if mask.sum() == 0:
             continue
 
@@ -299,7 +296,7 @@ def plot_test_results(
     # 5. Prediction Confidence (colored by spin type)
     ax5 = fig.add_subplot(gs[2, 0])
     for spin_val, spin_name in spin_names.items():
-        mask = df['spinType'] == spin_val
+        mask = df['spinDirection'] == spin_val
         if mask.sum() == 0:
             continue
         indices = np.where(mask)[0]
@@ -320,7 +317,7 @@ def plot_test_results(
     spin_labels = []
 
     for spin_val, spin_name in spin_names.items():
-        mask = df['spinType'] == spin_val
+        mask = df['spinDirection'] == spin_val
         if mask.sum() > 0:
             acc = (predictions_binary[mask] == y_true[mask]).mean()
             spin_accuracies.append(acc)
@@ -346,7 +343,7 @@ def plot_test_results(
     error_types = {'False Positive': [], 'False Negative': []}
 
     for spin_val, spin_name in spin_names.items():
-        mask = df['spinType'] == spin_val
+        mask = df['spinDirection'] == spin_val
         if mask.sum() == 0:
             continue
 
@@ -391,10 +388,8 @@ def test_threshold_sensitivity(test_csv_path):
     df = pd.read_csv(test_csv_path)
     df.columns = df.columns.str.strip()
 
-    X_test = df[['spinType', 'speed', 'spinAmount', 'timeSinceRelease',
-                 'ballPosX', 'ballPosY', 'ballVelX', 'ballVelY',
-                 'ballAngularVel', 'distanceToStumps', 'distanceToPad',
-                 'hitPad', 'reachedPad']].values
+    X_test = df[['impactPosX', 'impactPosY', 'impactVelX', 'impactVelY',
+                 'impactAngularVel', 'spinDirection', 'distanceToStumps']].values
 
     y_true = df['willHitStumps'].values
 
@@ -454,7 +449,7 @@ def main():
     import os
 
     # Path to test CSV (relative to Python folder)
-    test_csv = '../Unity/2dLBW/Assets/LBWTestData.csv'
+    test_csv = '../Unity/2dLBW/Assets/LBWTestData_V2.csv'
 
     # Check if file exists
     if not os.path.exists(test_csv):

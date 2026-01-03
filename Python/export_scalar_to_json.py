@@ -13,10 +13,8 @@ def export_scaler_to_json(scaler_path='scaler.pkl', output_path='scaler_params.j
         'mean': scaler.mean_.tolist(),
         'scale': scaler.scale_.tolist(),
         'feature_names': [
-            'spinType', 'speed', 'spinAmount', 'timeSinceRelease',
-            'ballPosX', 'ballPosY', 'ballVelX', 'ballVelY',
-            'ballAngularVel', 'distanceToStumps', 'distanceToPad',
-            'hitPad', 'reachedPad'
+            'impactPosX', 'impactPosY', 'impactVelX', 'impactVelY',
+            'impactAngularVel', 'spinDirection', 'spinMagnitude', 'distanceToStumps'
         ]
     }
 

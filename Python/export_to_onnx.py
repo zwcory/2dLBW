@@ -11,11 +11,11 @@ def export_to_onnx_legacy(
 
     print("Exporting with legacy exporter (forces opset 15)...")
 
-    model = LBWPredictor(input_size=13)
+    model = LBWPredictor(input_size=7)
     model.load_state_dict(torch.load(model_path))
     model.eval()
 
-    dummy_input = torch.randn(1, 13)
+    dummy_input = torch.randn(1, 7)
 
     # Use legacy exporter (pre-PyTorch 2.1)
     with torch.no_grad():

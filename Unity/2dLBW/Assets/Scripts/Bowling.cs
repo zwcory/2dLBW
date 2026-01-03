@@ -180,15 +180,6 @@ public class Bowling : MonoBehaviour
         ApplyInitialSpin();
         lineRenderer.enabled = false;
 
-
-        BallTracker existingTracker = gameObject.GetComponent<BallTracker>();
-        if (existingTracker != null)
-        {
-            Debug.LogWarning("Found existing BallTracker, destroying it");
-            Destroy(existingTracker);
-        }
-
-
         float currentSpinAmount = Mathf.Abs(
         currentSpin == SpinType.TopSpin ? topSpinTorque : backSpinTorque
            );
@@ -197,14 +188,6 @@ public class Bowling : MonoBehaviour
 
 
         padScript.RandomizePosition();
-
-
-
-        BallTracker tracker = gameObject.AddComponent<BallTracker>();
-        tracker.Initialize(currentSpin, currentSpeed, currentSpinAmount);
-
-        float radians = Mathf.Atan2(direction.y, direction.x);
-        float angle = radians * Mathf.Rad2Deg;
 
     }
 
@@ -325,6 +308,11 @@ public class Bowling : MonoBehaviour
             releaseVelocity = rb.linearVelocity,
             timestamp = Time.time
         };
+    }
+
+    public SpinType GetCurrentSpin()
+    {
+        return currentSpin;
     }
 
 }

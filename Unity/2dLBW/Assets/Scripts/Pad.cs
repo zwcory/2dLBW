@@ -9,20 +9,23 @@ public class Pad : MonoBehaviour
     [SerializeField] private Color ghostColor = new Color(1f, 1f, 1f, 0.3f);
 
     [Header("Movement Settings")]
-    [SerializeField] private float minPosition = 2f;  
-    [SerializeField] private float maxPosition = 8f;  
-    [SerializeField] private float moveVariation = 0.5f; 
+    [SerializeField] private float minPosition = 2f;
+    [SerializeField] private float maxPosition = 8f;
+    [SerializeField] private float moveVariation = 0.5f;
 
     private Vector3 startPosition;
     private bool isGhostMode = false;
     private bool wasHit = false;
     private HashSet<GameObject> ballsHit = new HashSet<GameObject>();
 
-
     [Header("References")]
-    [SerializeField] private BallTracker ballTracker;
+    [SerializeField] private ImprovedDataCollector dataCollector;
+    [SerializeField] private LBWPredictor lbwPredictor;
 
-
+    [Header("Indicator Box")]
+    [SerializeField] private SpriteRenderer indicatorBox;
+    [SerializeField] private Color hitColor = Color.red;
+    [SerializeField] private Color missColor = Color.green;
     private void Awake()
     {
         startPosition = transform.position;
@@ -39,7 +42,6 @@ public class Pad : MonoBehaviour
 
     public void RandomizePosition()
     {
-        // Random movement forward/backward
         float randomOffset = Random.Range(-moveVariation, moveVariation);
         float newX = Mathf.Clamp(
             startPosition.x + randomOffset,
@@ -52,6 +54,8 @@ public class Pad : MonoBehaviour
             transform.position.y,
             transform.position.z
         );
+
+        ballsHit.Clear();
     }
 
     public void ToggleGhostMode()
@@ -87,24 +91,85 @@ public class Pad : MonoBehaviour
     {
         if (!isGhostMode && collision.gameObject.CompareTag("Ball"))
         {
-            ballsHit.Add(collision.gameObject);
-            wasHit = true;
-            Debug.Log("PAD HIT! (LBW Check)");
+            HandleBallImpact(collision.gameObject, collision.rigidbody);
         }
     }
 
-    public void OnTriggerEnter2D(Collider2D collision)
+    private void OnTriggerEnter2D(Collider2D collision)
     {
-        Debug.Log($"TRIGGER ENTER: {collision.gameObject.name}, " +
-                  $"Tag: {collision.tag}, GhostMode: {isGhostMode}");
-
         if (isGhostMode && collision.gameObject.CompareTag("Ball"))
         {
-            ballsHit.Add(collision.gameObject);
-            Debug.Log("Ball passed through ghost pad");
-            wasHit = true;
+            Rigidbody2D rb = collision.GetComponent<Rigidbody2D>();
+            HandleBallImpact(collision.gameObject, rb);
         }
     }
+
+    // Calls data collector during training, or decision system during gameplay.
+  
+    private void HandleBallImpact(GameObject ball, Rigidbody2D ballRb)
+    {
+        // Prevent duplicate recording
+        if (ballsHit.Contains(ball))
+            return;
+
+        ballsHit.Add(ball);
+        Debug.Log($"PAD IMPACT at {ball.transform.position}");
+
+        // If data collector is active, record this impact
+        if (dataCollector != null && dataCollector.IsCollecting())
+        {
+            dataCollector.OnPadImpact(ball, ballRb);
+        }
+        else if (lbwPredictor != null && lbwPredictor.IsReady())
+        {
+            MakeLBWDecision(ball, ballRb);
+        }
+    }
+
+    private void MakeLBWDecision(GameObject ball, Rigidbody2D ballRb)
+    {
+  
+        Bowling bowling = ball.GetComponent<Bowling>();
+        if (bowling == null)
+        {
+            Debug.LogError("Ball has no Bowling component!");
+            return;
+        }
+        Bowling.SpinType spinType = bowling.GetCurrentSpin();
+
+        // Make prediction
+        LBWPredictor.LBWDecision decision = lbwPredictor.PredictLBW(
+            ball,
+            ballRb,
+            spinType
+        );
+
+        // Display or handle the decision
+        DisplayDecision(decision);
+    }
+    private void DisplayDecision(LBWPredictor.LBWDecision decision)
+    {
+        string result = decision.isOut ? "OUT" : "NOT OUT";
+        Debug.Log($"=== LBW DECISION ===");
+        Debug.Log($"Result: {result}");
+        Debug.Log($"Probability: {decision.probability:P1}");
+        Debug.Log($"Will Hit Stumps: {decision.willHitStumps}");
+
+        if (indicatorBox != null)
+        {
+            if (decision.willHitStumps)
+            {
+                indicatorBox.color = hitColor;
+            }
+            else
+            {
+                indicatorBox.color = missColor;
+
+            }
+
+        }
+    }
+
 
     public bool DidBallHit(GameObject ball)
     {
@@ -113,7 +178,7 @@ public class Pad : MonoBehaviour
 
     public void ResetPad()
     {
-        wasHit = false;
+        ballsHit.Clear();
         transform.position = startPosition;
     }
 
@@ -122,13 +187,14 @@ public class Pad : MonoBehaviour
         return wasHit;
     }
 
+
     public bool IsGhostMode()
     {
         return isGhostMode;
     }
 
-    public bool IsPadColliderEnabled()
+    public void ClearHitTracking()
     {
-        return padCollider.isActiveAndEnabled;
+        ballsHit.Clear();
     }
 }
