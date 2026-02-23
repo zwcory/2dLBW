@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="Builds">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/Unity/2dLBW/Builds/Windows.zip!/" />
+      <root url="jar://$PROJECT_DIR$/Unity/2dLBW/Builds/Mac.zip!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
