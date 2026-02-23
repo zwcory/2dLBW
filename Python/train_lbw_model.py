@@ -18,11 +18,10 @@ def load_data_from_csv(filepath):
     # Strip whitespace from column names
     df.columns = df.columns.str.strip()
 
-    # Features - 13 total
-    X = df[['spinType', 'speed', 'spinAmount', 'timeSinceRelease',
-            'ballPosX', 'ballPosY', 'ballVelX', 'ballVelY',
-            'ballAngularVel', 'distanceToStumps', 'distanceToPad',
-            'hitPad', 'reachedPad']].values
+    # Features - 8 total
+    X = df[['impactPosX', 'impactPosY', 'impactVelX', 'impactVelY',
+            'impactAngularVel', 'spinDirection',
+            'distanceToStumps']].values
 
     # Labels
     y = df['willHitStumps'].values
@@ -40,11 +39,10 @@ def load_data_from_json(filepath):
 
     for ex in examples:
         X.append([
-            ex['spinType'], ex['speed'], ex['spinAmount'],
-            ex['timeSinceRelease'],
-            ex['ballPosX'], ex['ballPosY'], ex['ballVelX'], ex['ballVelY'],
-            ex['ballAngularVel'], ex['distanceToStumps'],
-            ex['distanceToPad'], ex['hitPad'], ex['reachedPad']
+            ex['impactPosX'], ex['impactPosY'], ex['impactVelX'],
+            ex['impactVelY'],
+            ex['impactAngularVel'], ex['spinDirection'],
+            ex['distanceToStumps']
         ])
         y.append(ex['willHitStumps'])
 
@@ -66,7 +64,7 @@ class LBWDataset(Dataset):
 
 # Neural Network Model
 class LBWPredictor(nn.Module):
-    def __init__(self, input_size=13):
+    def __init__(self, input_size=7):
         super(LBWPredictor, self).__init__()
 
         self.network = nn.Sequential(
@@ -227,7 +225,7 @@ def main():
     print("Loading data...")
 
     # Path to CSV file (relative to this script in 2dLBW/Python/)
-    csv_path = '../Unity/2dLBW/Assets/LBWTrainingData.csv'
+    csv_path = '../Unity/2dLBW/Assets/LBWTrainingData_V2.csv'
 
     # Check if file exists
     if not os.path.exists(csv_path):
@@ -273,7 +271,7 @@ def main():
     val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
 
     # Create model
-    model = LBWPredictor(input_size=13)
+    model = LBWPredictor(input_size=7)
     print(f"\nModel architecture:\n{model}\n")
 
     # Count parameters
@@ -299,10 +297,8 @@ def main():
     plot_training_history(train_losses, val_losses, train_accs, val_accs)
 
     # Plot feature importance
-    feature_names = ['spinType', 'speed', 'spinAmount', 'timeSinceRelease',
-                     'ballPosX', 'ballPosY', 'ballVelX', 'ballVelY',
-                     'ballAngularVel', 'distanceToStumps', 'distanceToPad',
-                     'hitPad', 'reachedPad']
+    feature_names = ['impactPosX', 'impactPosY', 'impactVelX', 'impactVelY',
+                     'impactAngularVel', 'spinDirection', 'distanceToStumps']
     plot_feature_importance(model, feature_names)
 
     print("Saved visualizations:")

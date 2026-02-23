@@ -1002,8 +1002,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1588209347}
-        m_TargetAssemblyTypeName: FastDataCollector, Assembly-CSharp
+      - m_Target: {fileID: 1588209350}
+        m_TargetAssemblyTypeName: ImprovedDataCollector, Assembly-CSharp
         m_MethodName: StopFastCollection
         m_Mode: 5
         m_Arguments:
@@ -1135,8 +1135,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1588209347}
-        m_TargetAssemblyTypeName: FastDataCollector, Assembly-CSharp
+      - m_Target: {fileID: 1588209350}
+        m_TargetAssemblyTypeName: ImprovedDataCollector, Assembly-CSharp
         m_MethodName: StopFastCollection
         m_Mode: 5
         m_Arguments:
@@ -1534,8 +1534,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1588209347}
-        m_TargetAssemblyTypeName: FastDataCollector, Assembly-CSharp
+      - m_Target: {fileID: 1588209350}
+        m_TargetAssemblyTypeName: ImprovedDataCollector, Assembly-CSharp
         m_MethodName: StartFastCollection
         m_Mode: 5
         m_Arguments:
@@ -3394,8 +3394,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1588209347}
-        m_TargetAssemblyTypeName: FastDataCollector, Assembly-CSharp
+      - m_Target: {fileID: 1588209350}
+        m_TargetAssemblyTypeName: ImprovedDataCollector, Assembly-CSharp
         m_MethodName: StartFastCollection
         m_Mode: 5
         m_Arguments:
@@ -3453,7 +3453,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1588209348}
-  - component: {fileID: 1588209347}
+  - component: {fileID: 1588209350}
+  - component: {fileID: 1588209351}
   - component: {fileID: 1588209349}
   m_Layer: 0
   m_Name: DataCollector
@@ -3462,37 +3463,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1588209347
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1588209345}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 244f0c9b3e32d1e4bb7be7a60b7ec0a9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: '::'
-  ballPrefab: {fileID: 3229274359270592941, guid: 8c15e2ba587d0c34f845db3b6a0f940e, type: 3}
-  stumps: {fileID: 847783618}
-  pad: {fileID: 1662642921}
-  dataCollector: {fileID: 1588209349}
-  bowlingScript: {fileID: 1089566662506243346, guid: 8c15e2ba587d0c34f845db3b6a0f940e, type: 3}
-  ballsPerSet: 5
-  spawnInterval: 0.3
-  targetSamples: 25000
-  sampleRate: 0.05
-  autoBowlAngleMin: -22.5
-  autoBowlAngleMax: -5
-  forceMultiplier: 10
-  fixedDistance: 2
-  topSpinSpeedMultiplier: 0.85
-  backSpinSpeedMultiplier: 1
-  speedVariation: 0.1
-  topSpinTorque: 10
-  backSpinTorque: -10
-  ballTracker: {fileID: 1696687727}
 --- !u!4 &1588209348
 Transform:
   m_ObjectHideFlags: 0
@@ -3515,11 +3485,52 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1588209345}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ae5a05bd87cfb2241b7cea0f59f7f1c0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+--- !u!114 &1588209350
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1588209345}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c61fd844809b7a24e837604f01f80c6d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ImprovedDataCollector
+  ballPrefab: {fileID: 875059037}
+  stumps: {fileID: 847783618}
+  pad: {fileID: 1662642921}
+  dataCollector: {fileID: 1588209351}
+  bowlingScript: {fileID: 875059042}
+  targetDeliveries: 10000
+  spawnInterval: 0.3
+  ballsPerPadPosition: 20
+  autoBowlAngleMin: -22.5
+  autoBowlAngleMax: -5
+  forceMultiplier: 10
+  fixedDistance: 2
+  topSpinSpeedMultiplier: 0.85
+  backSpinSpeedMultiplier: 1
+  speedVariation: 0.1
+  topSpinTorque: 10
+  backSpinTorque: -10
+--- !u!114 &1588209351
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1588209345}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d3a2afbd712f834a893d10dfafa37a2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LBWDataV2
 --- !u!1 &1621785355
 GameObject:
   m_ObjectHideFlags: 0
@@ -3662,7 +3673,11 @@ MonoBehaviour:
   minPosition: 2
   maxPosition: 8
   moveVariation: 0.5
-  ballTracker: {fileID: 1696687727}
+  dataCollector: {fileID: 1588209350}
+  lbwPredictor: {fileID: 1696687725}
+  indicatorBox: {fileID: 692737431}
+  hitColor: {r: 1, g: 0, b: 0, a: 1}
+  missColor: {r: 0, g: 1, b: 0, a: 1}
 --- !u!4 &1662642922
 Transform:
   m_ObjectHideFlags: 0
@@ -3861,7 +3876,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1696687726}
   - component: {fileID: 1696687725}
-  - component: {fileID: 1696687727}
   m_Layer: 0
   m_Name: LBWPredictor
   m_TagString: Predictor
@@ -3881,9 +3895,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7dfd86b7158368741b3bc9b9d0d5ab8a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  modelAsset: {fileID: 5022602860645237092, guid: 43d2016f68e76d64a8b2d431035d5c45, type: 3}
-  scalerParamsJson: {fileID: 4900000, guid: 78640ae192d57054a8948dd64ed1f0a3, type: 3}
-  decisionThreshold: 0.55
+  modelAsset: {fileID: 5022602860645237092, guid: a9a640643c7da284bb24b6035fbecb86, type: 3}
+  scalerParamsJson: {fileID: 4900000, guid: 8245cbdbf5a77e44abc3a3f64e05b1cd, type: 3}
+  decisionThreshold: 0.35
   stumps: {fileID: 847783618}
   pad: {fileID: 1662642921}
 --- !u!4 &1696687726
@@ -3901,21 +3915,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1696687727
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1696687723}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 66bd2d1780f8f2c4eb6fec5629284997, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: '::'
-  indicatorBox: {fileID: 692737431}
-  hitColor: {r: 1, g: 0, b: 0, a: 1}
-  missColor: {r: 0, g: 1, b: 0, a: 1}
 --- !u!1 &1787780758
 GameObject:
   m_ObjectHideFlags: 0

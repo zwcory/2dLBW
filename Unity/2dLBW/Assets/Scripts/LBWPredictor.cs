@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
 using Unity.Barracuda;
 
-
 public class LBWPredictor : MonoBehaviour
 {
     [Header("Model Settings")]
@@ -17,7 +16,6 @@ public class LBWPredictor : MonoBehaviour
     private IWorker worker;
     private ScalerParams scalerParams;
 
-
     [System.Serializable]
     private class ScalerParams
     {
@@ -30,8 +28,6 @@ public class LBWPredictor : MonoBehaviour
     {
         LoadModel();
         LoadScalerParams();
-
-
     }
 
     void LoadModel()
@@ -48,9 +44,8 @@ public class LBWPredictor : MonoBehaviour
             runtimeModel
         );
 
-        Debug.Log(" LBW Model loaded successfully");
+        Debug.Log("LBW Model V2 loaded successfully");
     }
-
 
     void LoadScalerParams()
     {
@@ -64,57 +59,59 @@ public class LBWPredictor : MonoBehaviour
             scalerParamsJson.text
         );
 
-
         Debug.Log($"Scaler params loaded: {scalerParams.mean.Length} features");
+
+        // Verify we have 7 features (without spinMagnitude)
+        if (scalerParams.mean.Length != 7)
+        {
+            Debug.LogWarning($"Expected 7 features, got {scalerParams.mean.Length}");
+        }
     }
 
+    // Predicts LBW outcome based on pad impact data.
+    // This should be called at the moment the ball hits the pad.
     public LBWDecision PredictLBW(
-        Bowling.SpinType spinType,
-        float speed,
-        float spinAmount,
-        float timeSinceRelease,
-        Vector2 ballPos,
-        Vector2 ballVel,
-        float ballAngularVel,
-        float distanceToStumps,
-        float distanceToPad,
-        bool hitPad
+        Vector2 impactPos,
+        Vector2 impactVel,
+        float impactAngularVel,
+        int spinDirection,
+        float distanceToStumps
     )
     {
-        float[] features = new float[13]
+        // Build feature array matching training data format (7 features, no spinMagnitude)
+        float[] features = new float[7]
         {
-            (int)spinType,           // 0: spinType
-            speed,                   // 1: speed
-            spinAmount,              // 2: spinAmount
-            timeSinceRelease,        // 3: timeSinceRelease
-            ballPos.x,               // 4: ballPosX
-            ballPos.y,               // 5: ballPosY
-            ballVel.x,               // 6: ballVelX
-            ballVel.y,               // 7: ballVelY
-            ballAngularVel,          // 8: ballAngularVel
-            distanceToStumps,        // 9: distanceToStumps
-            distanceToPad,           // 10: distanceToPad
-            hitPad ? 1f : 0f,        // 11: hitPad
-            1f                       // 12: reachedPad (always 1 at decision time)
+            impactPos.x,           // 0: impactPosX
+            impactPos.y,           // 1: impactPosY
+            impactVel.x,           // 2: impactVelX
+            impactVel.y,           // 3: impactVelY
+            impactAngularVel,      // 4: impactAngularVel
+            spinDirection,         // 5: spinDirection (0 or 1)
+            distanceToStumps       // 6: distanceToStumps
         };
 
+        Debug.Log($"Raw features: impactPos=({impactPos.x:F3},{impactPos.y:F3}), " +
+                  $"impactVel=({impactVel.x:F3},{impactVel.y:F3}), " +
+                  $"angularVel={impactAngularVel:F3}, spinDir={spinDirection}");
 
-
+        // Normalize features
         float[] normalizedFeatures = NormalizeFeatures(features);
 
-     
-        Tensor inputTensor = new Tensor(1, 13, normalizedFeatures);
+        // Create input tensor and run inference
+        Tensor inputTensor = new Tensor(1, 7, normalizedFeatures);
         worker.Execute(inputTensor);
         Tensor outputTensor = worker.PeekOutput();
 
         float probability = outputTensor[0];
 
-
+        // Clean up tensors
         inputTensor.Dispose();
         outputTensor.Dispose();
 
         // Make decision
         bool willHitStumps = probability >= decisionThreshold;
+
+        Debug.Log($"PREDICTION: P(Hit Stumps)={probability:F3}, Decision={willHitStumps}");
 
         return new LBWDecision
         {
@@ -124,7 +121,29 @@ public class LBWPredictor : MonoBehaviour
         };
     }
 
-   
+    // Overload that accepts a GameObject ball for easier integration.
+    // Extracts all necessary data from the ball and its rigidbody.
+    public LBWDecision PredictLBW(
+        GameObject ball,
+        Rigidbody2D ballRb,
+        Bowling.SpinType spinType
+    )
+    {
+        Vector2 impactPos = ball.transform.position;
+        Vector2 impactVel = ballRb.linearVelocity;
+        float impactAngularVel = ballRb.angularVelocity;
+        int spinDirection = (int)spinType;
+        float distanceToStumps = Vector2.Distance(impactPos, stumps.transform.position);
+
+        return PredictLBW(
+            impactPos,
+            impactVel,
+            impactAngularVel,
+            spinDirection,
+            distanceToStumps
+        );
+    }
+
     float[] NormalizeFeatures(float[] features)
     {
         if (scalerParams == null || scalerParams.mean == null)
@@ -133,22 +152,46 @@ public class LBWPredictor : MonoBehaviour
             return features;
         }
 
+        if (features.Length != scalerParams.mean.Length)
+        {
+            Debug.LogError($"Feature length mismatch! Expected {scalerParams.mean.Length}, got {features.Length}");
+            return features;
+        }
+
         float[] normalized = new float[features.Length];
         for (int i = 0; i < features.Length; i++)
         {
-            normalized[i] = (features[i] - scalerParams.mean[i]) /
-                           scalerParams.scale[i];
+            // Handle potential divide by zero
+            if (Mathf.Approximately(scalerParams.scale[i], 0f))
+            {
+                normalized[i] = 0f;
+                Debug.LogWarning($"Feature {i} has scale=0, setting normalized value to 0");
+            }
+            else
+            {
+                normalized[i] = (features[i] - scalerParams.mean[i]) / scalerParams.scale[i];
+            }
 
+            // Check for invalid values
             if (float.IsNaN(normalized[i]) || float.IsInfinity(normalized[i]))
             {
-                Debug.LogError($"Feature {i} normalized to {normalized[i]}! " +
-                              $"Raw={features[i]}, Mean={scalerParams.mean[i]}, " +
-                              $"Scale={scalerParams.scale[i]}");
+                Debug.LogError($"Feature {i} ({GetFeatureName(i)}) normalized to {normalized[i]}! " +
+                              $"Raw={features[i]:F6}, Mean={scalerParams.mean[i]:F6}, " +
+                              $"Scale={scalerParams.scale[i]:F6}");
+                normalized[i] = 0f; // Fallback to 0
             }
         }
         return normalized;
     }
 
+    string GetFeatureName(int index)
+    {
+        string[] names = {
+            "impactPosX", "impactPosY", "impactVelX", "impactVelY",
+            "impactAngularVel", "spinDirection", "distanceToStumps"
+        };
+        return index < names.Length ? names[index] : "unknown";
+    }
 
     private void OnDestroy()
     {
@@ -160,68 +203,25 @@ public class LBWPredictor : MonoBehaviour
     {
         public bool willHitStumps;
         public float probability;
-        public bool isOut;  
+        public bool isOut;
+    }
+    public float GetDecisionThreshold()
+    {
+        return decisionThreshold;
     }
 
-
-    [ContextMenu("Test Model with Known Data")]
-    public void TestModelWithKnownData()
+   
+    // Update decision threshold at runtime
+    public void SetDecisionThreshold(float threshold)
     {
-        Debug.Log("=== TESTING MODEL WITH KNOWN DATA ===");
+        decisionThreshold = Mathf.Clamp01(threshold);
+        Debug.Log($"Decision threshold updated to {decisionThreshold:F2}");
+    }
 
-        // Check if everything is loaded
-        if (worker == null)
-        {
-            Debug.LogError("Worker is null! Model not loaded.");
-            return;
-        }
-
-        if (scalerParams == null)
-        {
-            Debug.LogError("Scaler params is null! Not loaded.");
-            return;
-        }
-
-        if (scalerParams.mean == null || scalerParams.scale == null)
-        {
-            Debug.LogError("Scaler mean/scale arrays are null!");
-            return;
-        }
-
-        Debug.Log($"Scaler has {scalerParams.mean.Length} features");
-
-        // Close miss
-        float[] testFeatures = new float[13]
-        {
-         0f,
-         0.831415f,
-         10f,
-         0.850223f, 
-         5.112407f,
-         -0.77087f,
-         13.58121f,
-         3.864911f,   
-         99.5542f,      
-         3.647906f,
-         2.117695f, 
-        0, 0f
-        };
-
-        Debug.Log($"Test features: [{string.Join(", ", testFeatures)}]");
-
-        float[] normalized = NormalizeFeatures(testFeatures);
-
-        Debug.Log($"Normalized: [{string.Join(", ", normalized)}]");
-
-        Tensor inputTensor = new Tensor(1, 13, normalized);
-        worker.Execute(inputTensor);
-        Tensor outputTensor = worker.PeekOutput();
-        float probability = outputTensor[0];
-
-
-        inputTensor.Dispose();
-        outputTensor.Dispose();
+    // Check if the model is ready to make predictions
+    public bool IsReady()
+    {
+        return worker != null && scalerParams != null &&
+               scalerParams.mean != null && scalerParams.scale != null;
     }
 }
-
-
